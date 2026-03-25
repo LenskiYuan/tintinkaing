@@ -1,0 +1,55 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE files
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Java/JVM
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Logs
+logs/
+*.log
+logback-spring.xml
+
+# Spring Boot
+target/
+build/
+
+# Docker
+.dockerignore
+
+# Flyway
+/flyway_schema_history/
+
+# Database
+*.db
+*.sqlite
+
+# Local development configs
+application-dev.yml
+application-qa.yml
+application-uat.yml
+application-prod.yml
+
+# Database seed data (contains test credentials)
+data-dev.sql
+data-qa.sql
+data-uat.sql
+data-prod.sql

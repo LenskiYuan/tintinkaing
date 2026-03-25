@@ -1,0 +1,10 @@
+{
+    "realm": {
+        "name": "demo-realm",
+        "realmId": "demo-realm",
+        "config": {
+            "defaultClientScopes": [],
+            "defaultClientRoles": []
+        }
+    }
+}
