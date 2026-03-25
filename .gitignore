@@ -6,7 +6,7 @@
 # IDE files
 .idea/
 .vscode/
-.claude/
+# .claude/
 *.swp
 *.swo
 
