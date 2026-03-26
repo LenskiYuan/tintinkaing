@@ -22,9 +22,6 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "keycloak_id", unique = true)
-    private String keycloakId;
-
     // Constructors
     public User() {}
 
@@ -78,13 +75,5 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public String getKeycloakId() {
-        return keycloakId;
-    }
-
-    public void setKeycloakId(String keycloakId) {
-        this.keycloakId = keycloakId;
     }
 }

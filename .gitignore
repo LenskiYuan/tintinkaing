@@ -31,6 +31,7 @@ logback-spring.xml
 # Spring Boot
 target/
 build/
+.m2/
 
 # Docker
 .dockerignore

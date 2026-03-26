@@ -1,85 +1,35 @@
-# User Management REST API
+# Spring Boot CRUD API
 
-Base URL: `http://localhost:8080/api/users`
+Base URL: `http://localhost:8080`
 
-## Endpoints
+All endpoints are currently public. The app is intended to run with env-specific files, for example:
 
-### 1. Get All Users
-**GET** `/api/users`
-
-Returns a list of all users (without passwords).
-
-**Response (200 OK):**
-```json
-[
-  {
-    "id": 1,
-    "username": "john_doe",
-    "email": "john@example.com",
-    "createdAt": "2026-03-22T02:31:46.408569"
-  }
-]
+```bash
+cd /home/yuan316/playground/tintinkaing/spring-boot-demo
+docker compose --env-file .env.dev up -d mysql
+set -a
+source .env.dev
+set +a
+mvn -Dmaven.repo.local=/home/yuan316/playground/tintinkaing/.m2/repository \
+  spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-### 2. Get User by ID
-**GET** `/api/users/{id}`
+## Users
 
-Returns a specific user by ID.
+Base path: `/api/users`
 
-**Response (200 OK):**
-```json
-{
-  "id": 1,
-  "username": "john_doe",
-  "email": "john@example.com",
-  "createdAt": "2026-03-22T02:31:46.408569"
-}
-```
+### Endpoints
 
-**Error (404 Not Found):**
-```json
-{
-  "error": "Resource Not Found",
-  "message": "User not found with id: 999"
-}
-```
+- `GET /api/users`
+- `GET /api/users/{id}`
+- `GET /api/users/username/{username}`
+- `GET /api/users/email/{email}`
+- `POST /api/users`
+- `PUT /api/users/{id}`
+- `DELETE /api/users/{id}`
 
-### 3. Get User by Username
-**GET** `/api/users/username/{username}`
+### Create / Update Payload
 
-Finds a user by username.
-
-**Response (200 OK):**
-```json
-{
-  "id": 1,
-  "username": "john_doe",
-  "email": "john@example.com",
-  "createdAt": "2026-03-22T02:31:46.408569"
-}
-```
-
-### 4. Get User by Email
-**GET** `/api/users/email/{email}`
-
-Finds a user by email address.
-
-**Response (200 OK):**
-```json
-{
-  "id": 1,
-  "username": "john_doe",
-  "email": "john@example.com",
-  "createdAt": "2026-03-22T02:31:46.408569"
-}
-```
-
-### 5. Create User
-**POST** `/api/users`
-
-Creates a new user.
-
-**Request Body:**
 ```json
 {
   "username": "john_doe",
@@ -88,55 +38,98 @@ Creates a new user.
 }
 ```
 
-**Validation Rules:**
+### Validation
+
 - `username`: required, 3-50 characters
-- `email`: required, must be valid email format
+- `email`: required, valid email
 - `password`: required, minimum 6 characters
 
-**Response (201 Created):**
+### Success Response Example
+
 ```json
 {
   "id": 1,
   "username": "john_doe",
   "email": "john@example.com",
-  "createdAt": "2026-03-22T02:31:46.408569"
+  "createdAt": "2026-03-26T00:13:42.954341188"
 }
 ```
 
-**Validation Error (400 Bad Request):**
+## Authors
+
+Base path: `/api/authors`
+
+### Endpoints
+
+- `GET /api/authors`
+- `GET /api/authors/{id}`
+- `POST /api/authors`
+- `PUT /api/authors/{id}`
+- `DELETE /api/authors/{id}`
+
+### Create / Update Payload
+
 ```json
 {
-  "username": "Username must be between 3 and 50 characters",
-  "email": "Email should be valid",
-  "password": "Password must be at least 6 characters"
+  "firstName": "Harper",
+  "lastName": "Lee",
+  "biography": "American novelist",
+  "birthDate": "1926-04-28"
 }
 ```
 
-### 6. Update User
-**PUT** `/api/users/{id}`
+## Books
 
-Updates an existing user.
+Base path: `/api/books`
 
-**Request Body:**
+### Endpoints
+
+- `GET /api/books`
+- `GET /api/books/{id}`
+- `POST /api/books`
+- `PUT /api/books/{id}`
+- `DELETE /api/books/{id}`
+
+### Create / Update Payload
+
 ```json
 {
-  "username": "updated_username",
-  "email": "updated@example.com",
-  "password": "newpassword123"
+  "title": "Example Book",
+  "isbn": "1234567890123",
+  "publishedYear": 2024,
+  "publisher": "Example Press",
+  "authorIds": [1, 2]
 }
 ```
 
-**Response (200 OK):**
+### Book Response Example
+
 ```json
 {
   "id": 1,
-  "username": "updated_username",
-  "email": "updated@example.com",
-  "createdAt": "2026-03-22T02:31:46.408569"
+  "title": "Example Book",
+  "isbn": "1234567890123",
+  "publishedYear": 2024,
+  "publisher": "Example Press",
+  "authorNames": ["Harper Lee"],
+  "createdAt": "2026-03-26T00:20:00",
+  "updatedAt": "2026-03-26T00:20:00"
 }
 ```
 
-**Error (404 Not Found):**
+## Error Responses
+
+### Validation Error: `400 Bad Request`
+
+```json
+{
+  "username": "Username must be between 3 and 50 characters",
+  "email": "Email should be valid"
+}
+```
+
+### Resource Not Found: `404 Not Found`
+
 ```json
 {
   "error": "Resource Not Found",
@@ -144,29 +137,31 @@ Updates an existing user.
 }
 ```
 
-### 7. Delete User
-**DELETE** `/api/users/{id}`
+### Bad Request: `400 Bad Request`
 
-Deletes a user.
+Used for controller-level validation such as duplicate ISBN checks.
 
-**Response (204 No Content)**
-
-**Error (404 Not Found):**
 ```json
 {
-  "error": "Resource Not Found",
-  "message": "User not found with id: 999"
+  "error": "Bad Request",
+  "message": "Book already exists with ISBN: 1234567890123"
+}
+```
+
+### Data Conflict: `409 Conflict`
+
+Used for database-level uniqueness conflicts, for example duplicate usernames or emails.
+
+```json
+{
+  "error": "Conflict",
+  "message": "The request conflicts with existing data."
 }
 ```
 
 ## Notes
 
-- Password is never returned in API responses (only stored, not exposed)
-- `createdAt` is automatically set when the user is created
-- All timestamps are in ISO-8601 format
-- Duplicate usernames or emails will cause a 500 error (database constraint violation)
-- Endpoint paths:
-  - `/api/users` - collection operations (GET all, POST)
-  - `/api/users/{id}` - individual operations by ID (GET, PUT, DELETE)
-  - `/api/users/username/{username}` - lookup by username
-  - `/api/users/email/{email}` - lookup by email
+- Passwords are never returned in API responses.
+- `createdAt` is set automatically when a user is created.
+- Flyway manages the schema; the app should be started after the MySQL container is up.
+- Current schema version is expected to be `v4`.

@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.BookDTO;
 import com.example.demo.dto.BookResponseDTO;
 import com.example.demo.entity.Book;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.AuthorRepository;
 import com.example.demo.repository.BookRepository;
 import org.springframework.http.HttpStatus;
@@ -69,16 +70,15 @@ public class BookController {
 
     @GetMapping("/{id}")
     public ResponseEntity<BookResponseDTO> getBookById(@PathVariable Long id) {
-        return bookRepository.findById(id)
-                .map(this::convertToResponseDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
+        return ResponseEntity.ok(convertToResponseDTO(book));
     }
 
     @PostMapping
     public ResponseEntity<BookResponseDTO> createBook(@Valid @RequestBody BookDTO bookDTO) {
         if (bookRepository.findByIsbn(bookDTO.getIsbn()).isPresent()) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Book already exists with ISBN: " + bookDTO.getIsbn());
         }
 
         Book book = convertToEntity(bookDTO);
@@ -88,35 +88,33 @@ public class BookController {
 
     @PutMapping("/{id}")
     public ResponseEntity<BookResponseDTO> updateBook(@PathVariable Long id, @Valid @RequestBody BookDTO bookDTO) {
-        return bookRepository.findById(id)
-                .map(existingBook -> {
-                    if (!existingBook.getIsbn().equals(bookDTO.getIsbn()) && bookRepository.findByIsbn(bookDTO.getIsbn()).isPresent()) {
-                        return null; // Duplicate ISBN check
-                    }
-                    existingBook.setTitle(bookDTO.getTitle());
-                    existingBook.setIsbn(bookDTO.getIsbn());
-                    existingBook.setPublishedYear(bookDTO.getPublishedYear());
-                    existingBook.setPublisher(bookDTO.getPublisher());
+        Book existingBook = bookRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
 
-                    // Update authors
-                    existingBook.getAuthors().clear();
-                    if (bookDTO.getAuthorIds() != null) {
-                        bookDTO.getAuthorIds().forEach(authorId -> {
-                            authorRepository.findById(authorId).ifPresent(author -> existingBook.getAuthors().add(author));
-                        });
-                    }
+        if (!existingBook.getIsbn().equals(bookDTO.getIsbn()) && bookRepository.findByIsbn(bookDTO.getIsbn()).isPresent()) {
+            throw new IllegalArgumentException("Book already exists with ISBN: " + bookDTO.getIsbn());
+        }
 
-                    Book updatedBook = bookRepository.save(existingBook);
-                    return convertToResponseDTO(updatedBook);
-                })
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        existingBook.setTitle(bookDTO.getTitle());
+        existingBook.setIsbn(bookDTO.getIsbn());
+        existingBook.setPublishedYear(bookDTO.getPublishedYear());
+        existingBook.setPublisher(bookDTO.getPublisher());
+
+        existingBook.getAuthors().clear();
+        if (bookDTO.getAuthorIds() != null) {
+            bookDTO.getAuthorIds().forEach(authorId -> {
+                authorRepository.findById(authorId).ifPresent(author -> existingBook.getAuthors().add(author));
+            });
+        }
+
+        Book updatedBook = bookRepository.save(existingBook);
+        return ResponseEntity.ok(convertToResponseDTO(updatedBook));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
         if (!bookRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Book not found with id: " + id);
         }
         bookRepository.deleteById(id);
         return ResponseEntity.noContent().build();

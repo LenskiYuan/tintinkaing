@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.AuthorDTO;
 import com.example.demo.entity.Author;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.AuthorRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -55,20 +55,13 @@ public class AuthorController {
 
     @GetMapping("/{id}")
     public ResponseEntity<AuthorDTO> getAuthorById(@PathVariable Long id) {
-        Optional<Author> author = authorRepository.findById(id);
-        return author.map(a -> {
-            AuthorDTO dto = convertToResponseDTO(a);
-            return ResponseEntity.ok(dto);
-        }).orElse(ResponseEntity.notFound().build());
+        Author author = authorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Author not found with id: " + id));
+        return ResponseEntity.ok(convertToResponseDTO(author));
     }
 
     @PostMapping
     public ResponseEntity<AuthorDTO> createAuthor(@Valid @RequestBody AuthorDTO dto) {
-        Optional<Author> existingAuthor = authorRepository.findByLastName(dto.getLastName());
-        if (existingAuthor.isPresent()) {
-            return ResponseEntity.badRequest().build();
-        }
-
         Author author = convertToEntity(dto);
         Author savedAuthor = authorRepository.save(author);
         AuthorDTO responseDTO = new AuthorDTO();
@@ -83,12 +76,8 @@ public class AuthorController {
 
     @PutMapping("/{id}")
     public ResponseEntity<AuthorDTO> updateAuthor(@PathVariable Long id, @Valid @RequestBody AuthorDTO dto) {
-        Optional<Author> existingAuthor = authorRepository.findById(id);
-        if (!existingAuthor.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Author author = existingAuthor.get();
+        Author author = authorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Author not found with id: " + id));
         author.setFirstName(dto.getFirstName());
         author.setLastName(dto.getLastName());
         author.setBiography(dto.getBiography());
@@ -110,7 +99,7 @@ public class AuthorController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAuthor(@PathVariable Long id) {
         if (!authorRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Author not found with id: " + id);
         }
         authorRepository.deleteById(id);
         return ResponseEntity.noContent().build();
