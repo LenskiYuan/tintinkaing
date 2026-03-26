@@ -3,7 +3,7 @@ services:
     image: mysql:8.0
     container_name: mysql-demo
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-dev_root_password_123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-demo_db}
     ports:
       - "3306:3306"

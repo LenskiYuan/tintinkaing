@@ -84,7 +84,7 @@ Kept:
 **application-dev.yml** (`src/main/resources/application-dev.yml`)
 - Removed entire `spring.security.oauth2.resourceserver.jwt` section
 - Removed entire `keycloak:` section
-- Password now has default: `password: ${MYSQL_ROOT_PASSWORD:dev_root_password_123}`
+- Password now comes from env: `password: ${MYSQL_ROOT_PASSWORD}`
 
 **application-example.yml** (`src/main/resources/application-example.yml`)
 - Removed `spring.security.oauth2.resourceserver.jwt` section

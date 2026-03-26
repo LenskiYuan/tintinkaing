@@ -263,3 +263,127 @@ mvn -Dmaven.repo.local=/home/yuan316/playground/tintinkaing/.m2/repository \
     - `/etc/systemd/system/docker.service.d/override.conf`
     - `Environment=GODEBUG=netdns=cgo`
 - These changes were necessary to make Docker image pulls work on this machine.
+
+---
+
+## Update: 2026-03-26 01:10 EDT
+
+### Additional Work Completed
+
+- Cleaned up the remaining Keycloak drift in the app codebase:
+  - removed the stale `keycloak` service from `spring-boot-demo/docker-compose.yml`
+  - removed `spring-boot-demo/keycloak/realm-dev.json`
+  - removed the unused `keycloakId` field from `spring-boot-demo/src/main/java/com/example/demo/entity/User.java`
+  - added `spring-boot-demo/src/main/resources/db/migration/V4__drop_keycloak_id_from_user.sql`
+- Restarted the app in `dev` and verified Flyway applied `V4` successfully.
+- Verified the live MySQL schema no longer contains `keycloak_id`.
+- Rewrote `.claude/tasks.md` so it now reflects the actual MySQL-only project and env-file workflow.
+- Rewrote `spring-boot-demo/API.md` so it matches the current public CRUD API, startup flow, and error responses.
+- Added a minimal test suite:
+  - `spring-boot-demo/src/test/java/com/example/demo/controller/UserControllerTest.java`
+  - `spring-boot-demo/src/test/java/com/example/demo/controller/BookControllerTest.java`
+- Re-added `spring-boot-starter-test` in `spring-boot-demo/pom.xml`
+- Ran tests successfully:
+
+```bash
+cd /home/yuan316/playground/tintinkaing/spring-boot-demo
+mvn -Dmaven.repo.local=/home/yuan316/playground/tintinkaing/.m2/repository test
+```
+
+- Test result:
+  - `Tests run: 5, Failures: 0, Errors: 0, Skipped: 0`
+
+### Git Status
+
+- Changes were committed and pushed to GitHub.
+- Commit:
+  - `117e035`
+- Commit message:
+  - `stabilize mysql dev flow and clean keycloak drift`
+
+### Current Working Runtime
+
+- MySQL is expected to be started with:
+
+```bash
+cd /home/yuan316/playground/tintinkaing/spring-boot-demo
+docker compose --env-file .env.dev up -d mysql
+```
+
+- Spring Boot is expected to be started with:
+
+```bash
+cd /home/yuan316/playground/tintinkaing/spring-boot-demo
+set -a
+source .env.dev
+set +a
+mvn -Dmaven.repo.local=/home/yuan316/playground/tintinkaing/.m2/repository \
+  spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+### Next Plan
+
+1. Add integration-style coverage for startup and persistence behavior beyond MVC mocks.
+2. Decide the long-term config shape:
+   - keep tracked `application.yml` as the safe base
+   - or reduce tracked config further and rely more on ignored env-specific files
+3. Add `application-qa.yml`, `application-uat.yml`, and `application-prod.yml` only when those environments are actually being implemented.
+4. Improve API consistency further:
+   - duplicate handling across users/authors/books
+   - pagination for list endpoints
+   - stronger validation around related entities and request payloads
+5. Optionally add health endpoints / actuator if runtime monitoring is needed.
+
+---
+
+## Update: 2026-03-26 Secrets / Repo Safety
+
+### What Was Done
+
+- Removed the hardcoded password from:
+  - `.claude/settings.local.json`
+- Added this path to the repo ignore list:
+  - `.claude/settings.local.json`
+- Removed `.claude/settings.local.json` from git tracking while keeping the local file on disk:
+
+```bash
+git rm --cached .claude/settings.local.json
+```
+
+### Important Current Git State
+
+- `.claude/settings.local.json` is now staged as deleted from git tracking.
+- `.gitignore` is modified to keep it ignored going forward.
+- `CODEX_RESUME_LOG.md` is also modified because of this note.
+
+### Secret Scan Findings
+
+Tracked files still containing credentials or password-like literals were identified, including:
+
+- `log.txt`
+- `log-old.txt`
+- `.claude/tasks.md`
+- `spring-boot-demo/API.md`
+- `spring-boot-demo/docker-compose.yml`
+- `spring-boot-demo/src/main/resources/application.yml`
+- `spring-boot-demo/src/main/resources/application-example.yml`
+
+Some of these are clearly sensitive or environment-like values, and some are example payload passwords.
+
+### Required Decision Before Continuing
+
+The user explicitly requested:
+
+- do not commit / push passwords or secrets to GitHub
+- if any secrets/passwords are already committed or being pushed, ask before deciding how to handle them
+
+So the next session should start by asking how to handle the already committed values.
+
+### Next Task
+
+Ask the user which policy to apply to the already committed secrets/password-like values:
+
+1. clean current files only
+2. clean current files and rewrite git history
+3. clean only truly sensitive credentials, leaving harmless example payload passwords
+4. another user-defined policy
